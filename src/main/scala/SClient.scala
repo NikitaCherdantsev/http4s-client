@@ -40,7 +40,9 @@ class HardStream {
 
   def toStr(json: Json): String = {
     val jsonInfo = json.as[JsonInfo]
-    jsonInfo.fold(l => "decoding failed", r => r.time + ": " + r.message)
+    val str = jsonInfo.fold(l => "decoding failed", r => r.time + ": " + r.message)
+    println(str)
+    str
   }
 }
 
