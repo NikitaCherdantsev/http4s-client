@@ -18,7 +18,14 @@ class HardStream {
   implicit val f: Facade[Json]                 = new io.circe.jawn.CirceSupportParser(None, false).facade
   implicit val cs: ContextShift[IO]            = IO.contextShift(global)
   implicit val timer: Timer[IO]                = IO.timer(global)
-  implicit val jsonsDecoder: Decoder[JsonInfo] = deriveDecoder[JsonInfo]
+  //implicit val jsonsDecoder: Decoder[JsonInfo] = deriveDecoder[JsonInfo]
+  implicit val jsonsDecoder: Decoder[JsonInfo] = Decoder.instance{
+    h =>
+    for {
+        time <- h.get[String]("time")
+        msg <- h.get[String]("message")
+    } yield JsonInfo(time, msg)
+  }
 
   def run: IO[Unit] =
     Stream
@@ -39,8 +46,7 @@ class HardStream {
   }
 
   def toStr(json: Json): String = {
-    val jsonInfo = json.as[JsonInfo]
-    val str = jsonInfo.fold(l => "decoding failed", r => r.time + ": " + r.message)
+    val str = json.as[JsonInfo].fold(_ => "decoding failed", r => r.time + ": " + r.message)
     println(str)
     str
   }
