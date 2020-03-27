@@ -1,0 +1,1 @@
+2020-03-27 15:09:17,103 [INFO] - Shutting down connection pool: curAllocated=1 idleQueues.size=1 waitQueue.size=0 maxWaitQueueLimit=256 closed=false

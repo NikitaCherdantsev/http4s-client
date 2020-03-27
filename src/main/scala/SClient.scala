@@ -13,6 +13,7 @@ import org.http4s.{EntityDecoder, Method, Request}
 import org.typelevel.jawn.Facade
 import io.circe.generic.auto._
 import io.circe.fs2._
+import org.log4s.Debug
 
 import scala.concurrent.ExecutionContext.global
 
@@ -22,14 +23,6 @@ class HardStream {
   implicit val f: Facade[Json]      = new io.circe.jawn.CirceSupportParser(None, false).facade
   implicit val cs: ContextShift[IO] = IO.contextShift(global)
   implicit val timer: Timer[IO]     = IO.timer(global)
-//    implicit val jsonsDecoder: Decoder[JsonInfo] = deriveDecoder[JsonInfo]
-//    implicit val jsonsDecoder: Decoder[JsonInfo] = Decoder.instance{
-//      h =>
-//      for {
-//          time <- h.get[String]("time")
-//          msg <- h.get[String]("message")
-//      } yield JsonInfo(time, msg)
-//    }
 
   def run: IO[Unit] =
     Stream
@@ -42,24 +35,16 @@ class HardStream {
 
   def stream(blocker: Blocker): Stream[IO, Unit] = {
     val req = Request[IO](Method.GET, uri"http://127.0.0.1:8080/json/someMessage")
-    val resp = for {
+    for {
       client <- BlazeClientBuilder[IO](global).stream
       res <- client
               .stream(req)
-              .flatMap(_.body.chunks.parseJsonStream)
+              .flatMap(_.body.through(byteArrayParser[IO]))
               .through(decoder[IO, JsonInfo])
-              .map(i => i.time + ":" + i.message)
-              .through(lines)
-              .through(utf8Encode)
-              .through(stdout(blocker))
+              .map { i =>
+                println(i.time + ":" + i.message)
+              }
     } yield res
-    resp
-//    resp
-//      .through(decoder[IO, JsonInfo])
-//      .map(i => i.time + ":" + i.message)
-//      .through(lines)
-//      .through(utf8Encode)
-//      .through(stdout(blocker))
   }
 }
 
